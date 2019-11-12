@@ -24,13 +24,13 @@ PrivateDevices=true
 ProtectHome=true
 NoNewPrivileges=true
 {% if pushgateway_persistence %}
-{%   if pushgateway_systemd_version.stdout | int >= 231 %}
+{%   if pushgateway_systemd_version | int >= 231 %}
 ReadWritePaths={{ pushgateway_persistence_dir }}
 {%   else %}
 ReadWriteDirectories={{ pushgateway_persistence_dir }}
 {%   endif %}
 {% endif %}
-{% if pushgateway_systemd_version.stdout | int >= 232 %}
+{% if pushgateway_systemd_version | int >= 232 %}
 ProtectSystem=strict
 ProtectControlGroups=true
 ProtectKernelModules=true
