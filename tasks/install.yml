@@ -5,6 +5,16 @@
     state: present
   with_items: "{{ pushgateway_dependencies }}"
 
+- name: Allow pushgateway to bind to port in SELinux
+  seport:
+    ports: "{{ pushgateway_web_listen_address.split(':')[1] }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+  when:
+    - ansible_version.full is version_compare('2.4', '>=')
+    - ansible_selinux.status == "enabled"
+    
 - name: Create the pushgateway group
   group:
     name: "{{ pushgateway_system_group }}"
@@ -24,13 +34,17 @@
 - name: Download pushgateway binary to local folder
   become: false
   get_url:
-    url: "https://github.com/prometheus/pushgateway/releases/download/v{{ pushgateway_version }}/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}.tar.gz"
-    dest: "/tmp/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}.tar.gz"
-    checksum: "sha256:{{ pushgateway_checksum }}"
+    url: "{{pushgateway_download_url}}{{ pushgateway_version }}/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch }}.tar.gz"
+    dest: "/tmp/pushgateway-{{ pushgateway_version }}.linux-{{ go_arch }}.tar.gz"
+    checksum: "sha256:{{ pushgateway_checksum | default(omit) }}"
+    url_username: "{{ pushgateway_download_auth.username | default(omit) }}"
+    url_password: "{{ pushgateway_download_auth.password | default(omit) }}"
+    validate_certs: "{{ pushgateway_download_auth.validate_certs | default(True) }}"
   register: _download_binary
   until: _download_binary is succeeded
   retries: 5
   delay: 2
+  run_once: true
   delegate_to: localhost
   check_mode: false
 
@@ -53,7 +67,7 @@
   notify: restart pushgateway
   when: not ansible_check_mode
 
-- name: Copy the pushgateway systemd service file
+- name: Create pushgateway systemd service file
   template:
     src: pushgateway.service.j2
     dest: /etc/systemd/system/pushgateway.service

@@ -8,3 +8,5 @@ pushgateway_persistence: true
 pushgateway_config_flags_extra: {}
 # pushgateway_config_flags_extra:
 #   persistence.interval: '5m'
+
+prometheus_download_url: "https://github.com/prometheus/prometheus/releases/download/v"
