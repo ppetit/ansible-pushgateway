@@ -51,12 +51,12 @@
   delegate_to: localhost
   when: pushgateway_checksum is not defined
 
-- name: "Get checksum for {{ go_arch_map[ansible_architecture] | default(ansible_architecture) }} architecture"
+- name: "Get checksum for {{ go_arch }} architecture"
   set_fact:
     pushgateway_checksum: "{{ item.split(' ')[0] }}"
   with_items: "{{ _checksums }}"
   when:
     - pushgateway_checksum is not defined
-    - "('linux-' + (go_arch_map[ansible_architecture] | default(ansible_architecture)) + '.tar.gz') in item"
+    - "('linux-' + go_arch + '.tar.gz') in item"
 
 
