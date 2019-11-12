@@ -44,11 +44,17 @@
   delegate_to: localhost
   run_once: true
 
+- name: Get checksum list from repo
+  set_fact:
+    _checksums: "{{ lookup('url', pushgateway_download_url + pushgateway_version + '/sha256sums.txt', wantlist=True) | list }}"
+  run_once: true
+  delegate_to: localhost
+  when: pushgateway_checksum is not defined
+
 - name: "Get checksum for {{ go_arch_map[ansible_architecture] | default(ansible_architecture) }} architecture"
   set_fact:
     pushgateway_checksum: "{{ item.split(' ')[0] }}"
-  with_items:
-    - "{{ lookup('url', 'https://github.com/prometheus/pushgateway/releases/download/v' + pushgateway_version + '/sha256sums.txt', wantlist=True) | list }}"
+  with_items: "{{ _checksums }}"
   when:
     - pushgateway_checksum is not defined
     - "('linux-' + (go_arch_map[ansible_architecture] | default(ansible_architecture)) + '.tar.gz') in item"
